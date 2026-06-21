@@ -1,0 +1,52 @@
+stages:
+ - validate
+ - plan
+ - apply
+ - destroy_dev
+
+variables:
+    TF_ROOT: .
+
+validate:
+  stage: validate
+  image: 
+   name: hashicorp/terraform:latest
+   entrypoint: [""]
+  script:
+    - terraform -chdir=$TF_ROOT init 
+    - terraform -chdir=$TF_ROOT validate
+
+plan:
+    stage: plan
+    needs: ["validate"]
+    image: 
+     name: hashicorp/terraform:latest
+     entrypoint: [""]
+    script:
+        - terraform -chdir=$TF_ROOT init 
+        - terraform -chdir=$TF_ROOT plan -out=tfplan
+    artifacts:
+        paths:
+            - $TF_ROOT/tfplan
+
+apply:
+    stage: apply
+    needs: ["plan"]
+    image: 
+     name: hashicorp/terraform:latest
+     entrypoint: [""]
+    script:
+        - terraform -chdir=$TF_ROOT init 
+        - terraform -chdir=$TF_ROOT apply -auto-approve tfplan
+    when: manual
+
+destroy_dev:
+    stage: destroy_dev
+    needs: ["apply"]
+    image: 
+     name: hashicorp/terraform:latest
+     entrypoint: [""]
+    script:
+        - terraform -chdir=$TF_ROOT init 
+        - terraform -chdir=$TF_ROOT destroy -auto-approve
+    when: manual
