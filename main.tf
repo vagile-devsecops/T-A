@@ -73,9 +73,23 @@
 #     }
 # }
 
-# # resource "null_resource" "slack-notify" {
-# #     depends_on = [aws_instance.demo_server,]
+resource "null_resource" "slack_notify" {
 
-# #     # triggers = {
-# #     #     instance_ip = aws_instance.demo_server.public_ip
-# #     # }
+  provisioner "local-exec" {
+    when = destroy
+
+    interpreter = ["PowerShell", "-Command"]
+
+    command = <<EOT
+$body = @{
+    text = "Terraform Destroy Completed Successfully"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Uri "https://hooks.slack.com/services/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" `
+    -Method Post `
+    -Body $body `
+    -ContentType "application/json"
+EOT
+  }
+}
